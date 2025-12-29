@@ -14,12 +14,6 @@ Avant l'exploitation, il est crucial de distinguer ces deux vulnérabilités sou
     * **Impact :** Accès à des fichiers sensibles (fichiers de configuration, sources, `/etc/passwd`). Le code n'est pas exécuté, il est affiché (sauf si l'on arrive à inclure un fichier contenant du code PHP par exemple, ce qui mène à une RCE).
     * *En résumé : LFI = Lire le contenu.*
 
-* **RCE (Remote Code Execution) :**
-    * **Définition :** Permet à l'attaquant d'exécuter des **commandes système** arbitraires.
-    * **Mécanisme :** L'attaquant interagit directement avec le shell du serveur.
-    * **Impact :** Compromission totale (création d'utilisateurs, reverse shell, suppression de fichiers).
-    * *En résumé : RCE = Exécuter des commandes.*
-
 ---
 
 ## 🔍 1. Reconnaissance & Analyse
