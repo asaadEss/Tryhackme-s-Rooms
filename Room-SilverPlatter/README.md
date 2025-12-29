@@ -35,24 +35,30 @@ Nous identifions une vulnérabilité de **contournement d'authentification** (Au
 **Exploitation (Auth Bypass) :**
 La faille réside dans le traitement de la connexion. Si le champ `password` est absent de la requête POST, le système valide la connexion.
 1.  Nous capturons la requête de login avec **Burp Suite**.
-   ![Page de login Silverpeas](screenshots/2.webp)
+   ![Page de login Silverpeas](screenshots/31.webp)
 3.  Nous supprimons le paramètre `password` du corps de la requête.
 4.  Nous forwardons la requête modifiée.
 
-![Burp Suite Request Modification](burp_bypass.webp)
+ ![Page de login Silverpeas](screenshots/32.webp)
 
 Une fois la requête envoyée, nous désactivons l'interception et rafraichissons la page : nous sommes connectés en tant qu'administrateur.
 
 ### Obtention d'identifiants (Information Disclosure)
-L'accès administrateur ne nous donne pas directement un shell. Nous cherchons une autre CVE pour lire des données sensibles.
-Nous trouvons une référence : *"Multiple CVEs leading to File Read on Server"*.
+
+Nous sommes connectés en tant qu'administrateur. Cependant, l'interface d'administration ne nous offre pas d'accès direct au serveur (RCE). Nous devons trouver autre chose.
+![Page de login Silverpeas](screenshots/4.webp)
+
+### CVE-2023-47323 : Vol d'identifiants (Information Disclosure)
+Nous retournons à notre liste de CVEs. Notre objectif est d'obtenir des identifiants pour nous connecter en SSH.
+La **CVE-2023-47323** attire notre attention : *"Broken Access Control Allows Attacker to Read All Messages"*. C'est le vecteur idéal pour trouver des échanges sensibles.
 
 En modifiant l'ID dans l'URL d'une fonctionnalité de messagerie (SQL Injection ou IDOR selon la version), nous pouvons lire les messages des autres utilisateurs.
+![Page de login Silverpeas](screenshots/5.webp)
+
 En itérant jusqu'à **ID=6**, nous découvrons un message contenant des identifiants en clair.
 
-![Message contenant les credentials](msg_creds.webp)
+![Page de login Silverpeas](screenshots/7.webp)
 
-**Credentials trouvés :** `tim` / `[MOT_DE_PASSE]`
 
 ---
 
@@ -67,3 +73,42 @@ La commande `id` révèle une information cruciale :
 
 ```bash
 uid=1001(tim) gid=1001(tim) groups=1001(tim), 4(adm)
+```
+![Page de login Silverpeas](screenshots/8.webp)
+
+### Analyse des permissions : Le groupe `adm`
+L'analyse des groupes (`id`) révèle que l'utilisateur appartient au groupe **adm (GID 4)**.
+Ce groupe est privilégié : ses membres ont généralement un accès en lecture aux journaux système (fichiers dans `/var/log`). C'est un endroit stratégique pour la reconnaissance, car il contient souvent des informations sensibles ou des erreurs.
+
+> **Note :** C'est un vecteur classique pour trouver des mots de passe enregistrés par erreur.
+
+### Exploitation des logs
+Nous listons le contenu de `/var/log` pour identifier le fichier d'authentification, puis nous utilisons `grep` pour chercher des motifs de mots de passe.
+
+```bash
+ls /var/log
+cat /var/log/auth* | grep -i pass
+```
+![Page de login Silverpeas](screenshots/9.webp)
+
+`grep -i pass` : Filtre la sortie pour ne montrer que les lignes contenant "pass" (insensible à la casse). Cela permet de trouver des termes comme "password", "passwd", ou "PASS".
+### Connexion et Analyse des Privilèges
+Avec le mot de passe récupéré dans les logs, nous changeons d'utilisateur pour accéder au compte de **tyler** :
+
+```bash
+su tyler
+```
+Une fois connecté, nous vérifions immédiatement les droits sudo de cet utilisateur pour voir s'il peut exécuter des commandes en tant que root.
+```bash
+sudo -l
+```
+![Page de login Silverpeas](screenshots/10.webp)
+### Exploitation des droits Sudo
+L'analyse de `sudo -l` révèle que l'utilisateur peut exécuter **n'importe quelle commande** en tant que **n'importe quel utilisateur** (souvent indiqué par `(ALL : ALL) ALL`). C'est une mauvaise configuration critique qui donne un accès total.
+
+Pour exploiter cela et devenir **root**, il nous suffit de lancer un shell interactif avec `sudo`. Plusieurs commandes permettent de le faire :
+
+```bash
+sudo bash
+# Alternatives possibles :
+# sudo su
