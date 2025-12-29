@@ -1,4 +1,4 @@
-# LFI Exploitation (Path Traversal) - TryHackMe Write-up
+# LFI Exploitation (Path Traversal) -  Write-up
 
 ## 🎯 Objectif
 Ce dépôt documente l'exploitation d'une vulnérabilité de type **Local File Inclusion (LFI)**. L'objectif est d'identifier un paramètre vulnérable dans l'URL pour lire des fichiers sensibles du serveur (comme `/etc/passwd`) et récupérer le flag final.
