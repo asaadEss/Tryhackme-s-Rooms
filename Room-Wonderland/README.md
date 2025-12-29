@@ -39,36 +39,38 @@ os.system("/bin/bash")
 ```
 Python charge les modules depuis le répertoire courant en priorité. Cette configuration permet un détournement de bibliothèque Python.
 
-Nous rendons ce fichier exécutable : chmod +x random.py. En exécutant le script principal en tant que rabbit, notre module random.py est chargé, nous donnant un shell en tant que rabbit.
+Nous rendons ce fichier exécutable : `chmod +x random.py`. En exécutant le script principal en tant que rabbit, notre module `random.py` est chargé, nous donnant un shell en tant que rabbit.
 
-🎩 3. Escalade de Privilèges : Rabbit vers Hatter
-(Technique : SUID Binary & PATH Hijacking)
+## 🎩 3. Escalade de Privilèges : Rabbit vers Hatter
+*(Technique : SUID Binary & PATH Hijacking)*
 
-Dans le dossier /home/rabbit, nous découvrons un binaire nommé teaParty. C'est un fichier SUID, ce qui signifie qu'il s'exécute avec les permissions de son propriétaire (ici, hatter).
+Dans le dossier `/home/rabbit`, nous découvrons un binaire nommé `teaParty`. C'est un fichier **SUID**, ce qui signifie qu'il s'exécute avec les permissions de son propriétaire (ici, `hatter`).
 
-Analyse du binaire : Lors de l'exécution, le programme affiche un message et une date future.
+**Analyse du binaire :** Lors de l'exécution, le programme affiche un message et une date future.
 
-Pour comprendre son fonctionnement, nous analysons le binaire. Nous remarquons l'appel à la commande système date (et /bin/echo).
+Pour comprendre son fonctionnement, nous analysons le binaire. Nous remarquons l'appel à la commande système `date` (et `/bin/echo`).
 
-Vulnérabilité : Le code utilise /bin/echo (chemin absolu, sécurisé) mais utilise simplement date (chemin relatif, vulnérable). Le système va donc chercher l'exécutable date dans les dossiers listés par la variable $PATH.
+**Vulnérabilité :** Le code utilise `/bin/echo` (chemin absolu, sécurisé) mais utilise simplement `date` (chemin relatif, vulnérable). Le système va donc chercher l'exécutable `date` dans les dossiers listés par la variable `$PATH`.
 
-Exploitation :
+**Exploitation :**
 
-Nous créons un script malveillant nommé date qui lance un shell (/bin/bash).
+Nous créons un script malveillant nommé `date` qui lance un shell (`/bin/bash`).
 
-Nous modifions la variable $PATH pour inclure notre dossier actuel (/home/rabbit) au tout début.
+Nous modifions la variable `$PATH` pour inclure notre dossier actuel (`/home/rabbit`) au tout début.
 
-Note : Nous ajoutons le PATH existant à la fin pour ne pas casser les fonctionnalités système de base, tout en priorisant notre binaire.
+> **Note :** Nous ajoutons le PATH existant à la fin pour ne pas casser les fonctionnalités système de base, tout en priorisant notre binaire.
+
+```bash
 export PATH=/home/rabbit:$PATH
-export : Définit la variable d'environnement.
 
 /home/rabbit : Le dossier où se trouve notre faux script "date".
 
 :$PATH : Ajoute le chemin existant à la suite.
 
-En relançant ./teaParty, le binaire exécute notre faux script date avec les droits de hatter. Nous obtenons un shell pour l'utilisateur hatter.
-👑 4. Escalade de Privilèges : Hatter vers Root
-(Technique : Linux Capabilities)
+En relançant `./teaParty`, le binaire exécute notre faux script date avec les droits de hatter. Nous obtenons un shell pour l'utilisateur hatter.
+
+## 👑 4. Escalade de Privilèges : Hatter vers Root
+*(Technique : Linux Capabilities)*
 
 Une fois connecté en tant que hatter, nous transférons et exécutons LinPEAS pour scanner le système.
 python3 -m http.server # Sur la machine attaquante
