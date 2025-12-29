@@ -53,11 +53,11 @@ C'est un fichier **SUID**, ce qui signifie qu'il s'exécute avec les permissions
 **Analyse du binaire :**
 Lors de l'exécution, le programme affiche un message et une date future.
 
-![TeaParty Execution](1er.webp)
+![TeaParty Execution](screenshots/1er.webp)
 
 Pour comprendre son fonctionnement, nous analysons le binaire. Nous remarquons l'appel à la commande système `date` (et `/bin/echo`).
 
-![TeaParty Binary Analysis](2eme.webp)
+![TeaParty Binary Analysis](screenshots/2eme.webp)
 
 **Vulnérabilité :**
 Le code utilise `/bin/echo` (chemin absolu, sécurisé) mais utilise simplement `date` (chemin relatif, vulnérable). Le système va donc chercher l'exécutable `date` dans les dossiers listés par la variable `$PATH`.
@@ -75,7 +75,7 @@ export PATH=/home/rabbit:$PATH
 * `/home/rabbit` : Le dossier où se trouve notre faux script "date".
 * `:$PATH` : Ajoute le chemin existant à la suite.
 
-![Export Path](3eme.webp)
+![Export Path](screenshots/3eme.webp)
 
 En relançant `./teaParty`, le binaire exécute notre faux script `date` avec les droits de hatter. Nous obtenons un shell pour l'utilisateur **hatter**.
 
@@ -95,12 +95,12 @@ chmod +x linpeas.sh
 
 LinPEAS identifie que l'interpréteur **Perl** possède des "capabilities" étendues (`cap_setuid+ep`).
 
-![Linpeas Results](4eme.webp)
+![Linpeas Results](screenshots/4eme.webp)
 
 ### Explication de la vulnérabilité
 La capability `CAP_SETUID` permet au binaire de manipuler son propre UID (User ID). Si elle est définie sur un binaire comme Perl, elle peut être utilisée comme une backdoor pour devenir root.
 
-![Capabilities Explanation](5eme.webp)
+![Capabilities Explanation](screenshots/5eme.webp)
 
 ### Exploitation
 Nous utilisons une commande issue de **GTFOBins** pour exploiter cette capability :
@@ -114,7 +114,7 @@ perl -e 'use POSIX qw(setuid); POSIX::setuid(0); exec "/bin/sh";'
 * `POSIX::setuid(0);` : Définit l'ID utilisateur à 0 (Root).
 * `exec "/bin/sh";` : Lance un shell avec ces nouveaux privilèges.
 
-![Root Shell](6eme.webp)
+![Root Shell](screenshots/6eme.webp)
 
 Nous sommes maintenant **root**. Pour rendre le shell plus agréable (autocomplétion, historique), nous le stabilisons :
 
