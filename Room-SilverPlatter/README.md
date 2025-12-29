@@ -20,7 +20,7 @@ Une énumération de répertoires (Gobuster) ou une analyse du site sur le port 
 
 Nous testons l'accès direct : `http://IP:8080/Silverpeas`, ce qui nous mène à la page de connexion de l'application.
 
-![Page de login Silverpeas](web_login.webp)
+![Page de login Silverpeas](screenshots/1.webp)
 
 ---
 
@@ -28,13 +28,16 @@ Nous testons l'accès direct : `http://IP:8080/Silverpeas`, ce qui nous mène à
 
 ### Recherche de Vulnérabilités (CVE)
 Une recherche Google "SilverPeas CVEs" nous dirige vers plusieurs failles critiques.
+![Page de login Silverpeas](screenshots/2.webp)
+
 Nous identifions une vulnérabilité de **contournement d'authentification** (Authentication Bypass).
 
 **Exploitation (Auth Bypass) :**
 La faille réside dans le traitement de la connexion. Si le champ `password` est absent de la requête POST, le système valide la connexion.
 1.  Nous capturons la requête de login avec **Burp Suite**.
-2.  Nous supprimons le paramètre `password` du corps de la requête.
-3.  Nous forwardons la requête modifiée.
+   ![Page de login Silverpeas](screenshots/2.webp)
+3.  Nous supprimons le paramètre `password` du corps de la requête.
+4.  Nous forwardons la requête modifiée.
 
 ![Burp Suite Request Modification](burp_bypass.webp)
 
